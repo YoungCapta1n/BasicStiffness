@@ -107,6 +107,9 @@ void CalibrationData::ClearOne(int t_index_channel) {
   it->second.clear();
   // setup calibration status
   calibration_status[t_index_channel] = 2;
+  // reset calibrated zero and slope
+  calibration_intercept[t_index_channel] = 0;
+  calibration_slope[t_index_channel] = 1;
 }
 
 void CalibrationData::Convert4Display(int t_index_channel, int &t_num_point,

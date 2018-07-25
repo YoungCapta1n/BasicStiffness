@@ -102,6 +102,12 @@
     <ClInclude Include="CalibrationData.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="sqlite3\CppSQLite3.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="database.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="basicfoce.cpp">
@@ -156,6 +162,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CalibrationData.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlite3\CppSQLite3.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
