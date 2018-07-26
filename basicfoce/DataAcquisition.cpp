@@ -311,11 +311,11 @@ void DataAcquisition::ScanAndGatherData(std::vector<double>
 		//Lock it down!
 		if (SUCCEEDED(SafeArrayAccessData(psa, (void**)&rgElems)))
 		{
-
-			t_ChannelValue.reserve(t_index.size());
-			for (std::vector<int>::const_iterator it = t_index.begin();
-				it != t_index.end(); ++it)
-				t_ChannelValue.push_back((double)rgElems[*it]);
+			size_t length = t_index.size();
+			for (size_t it = 0; it != length; ++it) {
+				t_ChannelValue[it]=((double)rgElems[t_index[it]]);
+			}
+				
 			//Unlock it
 			SafeArrayUnaccessData(psa);
 			//Destroy it because DaqCOM will re-allocate
