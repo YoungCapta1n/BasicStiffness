@@ -58,17 +58,11 @@ public:
 		}
 	}
 
+	// thread for database save
 	void loop_updateonetable_t() {
 		std::thread t1(&database::loop_updateonetable, this);
 		t1.detach();
 	}
-
-private:
-	std::string tablename;
-	CppSQLite3DB _db;
-	std::time_t time4table;
-	std::vector<int> selected_channel;
-
 	void loop_updateonetable() {
 		while (1)
 		{
@@ -76,6 +70,34 @@ private:
 			std::this_thread::sleep_for(std::chrono::microseconds(20));
 		}
 	}
+
+	void updateonetable() {
+
+		size_t num_channel = realtimeVoltage.size();
+		// convert to const char *
+		const char *update_start = "INSERT INTO S";
+		const char *update_name = tablename.c_str();
+		const char *update_middle = " VALUES (julianday('now')";
+		char *channel_char = (char *)malloc(3 + num_channel * 64 + strlen(update_start) +
+			strlen(update_name) + strlen(update_middle));
+		strcpy(channel_char, update_start);
+		strcat(channel_char, update_name);
+		strcat(channel_char, update_middle);
+		convert_doublep_char(realtimeVoltage, channel_char);
+		strcat(channel_char, ");");
+		_db.execDML(channel_char);
+		free(channel_char);
+	}
+
+private:
+	std::string tablename;
+	CppSQLite3DB _db;
+	std::time_t time4table;
+	std::vector<int> selected_channel;
+	std::vector<double> max_onetable;
+	std::vector<double> min_onetable;
+	std::vector<double> average_onetable;
+	std::vector<double> std_onetable;
 
 	void generatetablename() {
 		// update time
@@ -100,21 +122,42 @@ private:
 		}
 	}
 
-	void updateonetable() {
+	void computestatistics(){
+		size_t num_channel = selected_channel.size();
+		max_onetable = std::vector<double>(num_channel, 0);
+		min_onetable = std::vector<double>(num_channel, 0);
+		average_onetable = std::vector<double>(num_channel, 0);
+		std_onetable = std::vector<double>(num_channel, 0);
 
-		size_t num_channel = realtimeVoltage.size();
 		// convert to const char *
-		const char *update_start = "INSERT INTO S";
-		const char *update_name = tablename.c_str();
-		const char *update_middle = " VALUES (julianday('now')";
-		char *channel_char = (char *)malloc(3 + num_channel * 64 + strlen(update_start) +
-			strlen(update_name) + strlen(update_middle));
-		strcpy(channel_char, update_start);
-		strcat(channel_char, update_name);
-		strcat(channel_char, update_middle);
-		convert_doublep_char(realtimeVoltage, channel_char);
-		strcat(channel_char, ");");
-		_db.execDML(channel_char);
-		free(channel_char);
+		const char *table_start = "SELECT";
+		const char *table_name = tablename.c_str();
+		const char *table_middle = " (DATETIME    TEXT       NOT NULL";
+		char *max_char = (char *)malloc(3 + num_channel * 15 + strlen(table_start) +
+			strlen(table_name) + strlen(table_middle));
+		strcpy(max_char, table_start);
+		strcat(max_char, table_name);
+		strcat(max_char, table_middle);
+		for (size_t i = 0; i != num_channel; ++i) {
+			char buffer[3];
+			sprintf(buffer, "%d", selected_channel[i]);
+			strcat(max_char, ",Chan");
+			strcat(max_char, buffer);
+			strcat(max_char, " DOUBLE");
+		}
+		strcat(max_char, ");");
+		_db.execDML(max_char);
+		free(max_char);
+
+
+
+		// max
+
+		// min
+
+		// average
+
+		// std
 	}
+
 };
