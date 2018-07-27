@@ -6,11 +6,8 @@ CalibrationData::CalibrationData(int t_num_channel)
 	: sample_num(100), total_num_channel(t_num_channel),
 	calibration_slope(t_num_channel, 1.0),
 	calibration_intercept(t_num_channel, 0.0),
-	desired_load(t_num_channel, 0.0), calibration_status(t_num_channel, 2) {
-
-	v_motor_index.reserve(total_num_channel);
+	calibration_status(t_num_channel, 2) {
 	for (int i = 0; i != total_num_channel; ++i) {
-		v_motor_index.push_back(i);
 		calibration_dict.insert(std::make_pair(i, std::vector<double>{}));
 	}
 }
@@ -21,9 +18,9 @@ void CalibrationData::WriteConfigurationData(CString Filename) const {
 	std::ofstream fout(Filename);
 	if (fout) {
 		for (int it = 0; it != total_num_channel; ++it)
-			fout << it << " " << v_motor_index[it] << " " << calibration_slope[it]
-			<< " " << calibration_intercept[it] << " " << desired_load[it] << " "
-			<< calibration_status[it] << std::endl;
+			fout << it << " " << calibration_slope[it]
+			<< " " << calibration_intercept[it] 
+			<< " " << calibration_status[it] << std::endl;
 	}
 	fout.close();
 }
@@ -36,18 +33,14 @@ void CalibrationData::ReadConfigurationData(CString Filename) {
 	if (infile) {
 		calibration_slope.clear();
 		calibration_intercept.clear();
-		desired_load.clear();
-		v_motor_index.clear();
 		calibration_status.clear();
 		for (std::string line; getline(infile, line, '\n');) {
 			std::vector<std::string> results;
 			line = line + " ";
 			split(line, delim, results);
-			v_motor_index.push_back(std::stoi(results[1])); // convert string to int
 			calibration_slope.push_back(
-				std::stod(results[2])); // convert string to double
-			calibration_intercept.push_back(std::stod(results[3]));
-			desired_load.push_back(std::stod(results[4]));
+				std::stod(results[1])); // convert string to double
+			calibration_intercept.push_back(std::stod(results[2]));
 			calibration_status.push_back(std::stoi(results.back()));
 		}
 	}

@@ -14,8 +14,6 @@ class CalibrationData {
 public:
 	std::vector<double> calibration_slope;
 	std::vector<double> calibration_intercept;
-	std::vector<double> desired_load;
-	std::vector<int> v_motor_index;
 	std::vector<int> v_selected_channel;
 	// Record calibration status and selected or not
 	// 0--> calibration is done and then selected
