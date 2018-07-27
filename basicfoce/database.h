@@ -10,7 +10,7 @@ using namespace std;
 class database {
 public:
 	explicit database() : tablename(""),
-		time4table(std::time(nullptr)), selected_channel(16, 0) {}
+		time4table(std::time(nullptr)), selected_channel(16, 0), num_channel(16){}
 	~database() {}
 
 	void opendatabase(const CString &_currentpath, const CString &_projectname) {
@@ -31,8 +31,7 @@ public:
 			// get current unix time and save to std::string
 			generatetablename();
 			set_selectedchannel(_selected_channel);
-			size_t num_channel = selected_channel.size();
-			// convert to const char *
+				// convert to const char *
 			const char *table_start = "CREATE TABLE S";
 			const char *table_name = tablename.c_str();
 			const char *table_middle = " (DATETIME    TEXT       NOT NULL";
@@ -73,7 +72,6 @@ public:
 
 	void updateonetable() {
 
-		size_t num_channel = realtimeVoltage.size();
 		// convert to const char *
 		const char *update_start = "INSERT INTO S";
 		const char *update_name = tablename.c_str();
@@ -83,21 +81,27 @@ public:
 		strcpy(channel_char, update_start);
 		strcat(channel_char, update_name);
 		strcat(channel_char, update_middle);
-		convert_doublep_char(realtimeVoltage, channel_char);
+		convert_doublep_char(realtimeLoad, channel_char);
 		strcat(channel_char, ");");
 		_db.execDML(channel_char);
 		free(channel_char);
 	}
 
+	void computestatistics(std::vector<double> &_max_onetable,
+						    std::vector<double> &_min_onetable,
+							std::vector<double> &_avg_onetable,
+		                    std::vector<double> &_std_onetable) {
+		computemax(_max_onetable);
+		computemin(_min_onetable);
+		computeavg(_avg_onetable);
+		computestd(_std_onetable);
+	}
 private:
 	std::string tablename;
 	CppSQLite3DB _db;
 	std::time_t time4table;
 	std::vector<int> selected_channel;
-	std::vector<double> max_onetable;
-	std::vector<double> min_onetable;
-	std::vector<double> average_onetable;
-	std::vector<double> std_onetable;
+	size_t num_channel;
 
 	void generatetablename() {
 		// update time
@@ -109,6 +113,7 @@ private:
 
 	void set_selectedchannel(const std::vector<int> &_selected_channel) {
 		selected_channel = _selected_channel;
+		num_channel = _selected_channel.size();
 	}
 
 	// convert a float array to char array
@@ -121,43 +126,105 @@ private:
 			strcat(t_str, buffer);
 		}
 	}
-
-	void computestatistics(){
-		size_t num_channel = selected_channel.size();
-		max_onetable = std::vector<double>(num_channel, 0);
-		min_onetable = std::vector<double>(num_channel, 0);
-		average_onetable = std::vector<double>(num_channel, 0);
-		std_onetable = std::vector<double>(num_channel, 0);
-
-		// convert to const char *
-		const char *table_start = "SELECT";
-		const char *table_name = tablename.c_str();
-		const char *table_middle = " (DATETIME    TEXT       NOT NULL";
-		char *max_char = (char *)malloc(3 + num_channel * 15 + strlen(table_start) +
-			strlen(table_name) + strlen(table_middle));
-		strcpy(max_char, table_start);
-		strcat(max_char, table_name);
-		strcat(max_char, table_middle);
+	// compute the max value of all channels of selected table
+	void computemax(std::vector<double> &_max_onetable) {
+		CppSQLite3Query _q;
+		// max
+		const char *table_start = "SELECT MAX(";
+		char table_end[50];
+		strcpy(table_end, ") FROM S");
+		strcat(table_end, tablename.c_str());
+		strcat(table_end, ";");
 		for (size_t i = 0; i != num_channel; ++i) {
+			char *max_char = (char *)malloc(20 + strlen(table_start) +
+				strlen(table_end));
 			char buffer[3];
 			sprintf(buffer, "%d", selected_channel[i]);
-			strcat(max_char, ",Chan");
+			strcpy(max_char, table_start);
+			strcat(max_char, "Chan");
 			strcat(max_char, buffer);
-			strcat(max_char, " DOUBLE");
+			strcat(max_char, table_end);
+			_q = _db.execQuery(max_char);
+			_max_onetable[i] = atof(_q.fieldValue(0));
+			free(max_char);
 		}
-		strcat(max_char, ");");
-		_db.execDML(max_char);
-		free(max_char);
-
-
-
+	}
+	// compute the min value of all channels of selected table
+	void computemin(std::vector<double> &_min_onetable) {
+		CppSQLite3Query _q;
 		// max
-
-		// min
-
-		// average
-
+		const char *table_start = "SELECT MIN(";
+		char table_end[50];
+		strcpy(table_end, ") FROM S");
+		strcat(table_end, tablename.c_str());
+		strcat(table_end, ";");
+		for (size_t i = 0; i != num_channel; ++i) {
+			char *min_char = (char *)malloc(20 + strlen(table_start) +
+				strlen(table_end));
+			char buffer[3];
+			sprintf(buffer, "%d", selected_channel[i]);
+			strcpy(min_char, table_start);
+			strcat(min_char, "Chan");
+			strcat(min_char, buffer);
+			strcat(min_char, table_end);
+			_q = _db.execQuery(min_char);
+			_min_onetable[i] = atof(_q.fieldValue(0));
+			free(min_char);
+		}
+	}
+	// compute the mean value of all channels of selected table
+	void computeavg(std::vector<double> &_avg_onetable) {
+		CppSQLite3Query _q;
+		// max
+		const char *table_start = "SELECT AVG(";
+		char table_end[50];
+		strcpy(table_end, ") FROM S");
+		strcat(table_end, tablename.c_str());
+		strcat(table_end, ";");
+		for (size_t i = 0; i != num_channel; ++i) {
+			char *avg_char = (char *)malloc(20 + strlen(table_start) +
+				strlen(table_end));
+			char buffer[3];
+			sprintf(buffer, "%d", selected_channel[i]);
+			strcpy(avg_char, table_start);
+			strcat(avg_char, "Chan");
+			strcat(avg_char, buffer);
+			strcat(avg_char, table_end);
+			_q = _db.execQuery(avg_char);
+			_avg_onetable[i] = atof(_q.fieldValue(0));
+			free(avg_char);
+		}
+	}
+	// compute the mean value of all channels of selected table
+	void computestd(std::vector<double> &_std_onetable) {
+		CppSQLite3Query _q;
 		// std
+		const char *table_start = "SELECT AVG((";
+		char table_namec[40];
+		strcpy(table_namec, "S");
+		strcat(table_namec, tablename.c_str());
+		char table_end[100];
+		strcpy(table_end, ") AS a FROM ");
+		strcat(table_end, table_namec);
+		strcat(table_end, ") AS sub;");
+		for (size_t i = 0; i != num_channel; ++i) {
+			char *std_char = (char *)malloc(300);
+			char buffer[3];
+			sprintf(buffer, "%d", selected_channel[i]);
+			strcpy(std_char, table_start);
+			strcat(std_char, "Chan");
+			strcat(std_char, buffer);
+			strcat(std_char, "-sub.a)*(Chan");
+			strcat(std_char, buffer);
+			strcat(std_char, "-sub.a)) FROM ");
+			strcat(std_char, table_namec);
+			strcat(std_char, ", (SELECT AVG(Chan");
+			strcat(std_char, buffer);
+			strcat(std_char, table_end);
+			_q = _db.execQuery(std_char);
+			_std_onetable[i] = atof(_q.fieldValue(0));
+			free(std_char);
+		}
 	}
 
 };
