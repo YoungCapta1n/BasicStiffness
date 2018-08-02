@@ -96,6 +96,13 @@ public:
 		computeavg(_avg_onetable);
 		computestd(_std_onetable);
 	}
+
+	size_t getnumselectedchannel() const{
+		return num_channel;
+	}
+	std::vector<int> getselected_channel() const{
+		return selected_channel;
+	}
 private:
 	std::string tablename;
 	CppSQLite3DB _db;
